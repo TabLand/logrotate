@@ -1057,6 +1057,19 @@ int findNeedRotating(struct logInfo *log, int logNum, int force)
 	       state->lastRotated.tm_mday != now.tm_mday ||
 	       state->lastRotated.tm_hour != now.tm_hour) {
 	switch (log->criterium) {
+	case ROT_FORTNIGHTLY:
+	    /* rotate if:
+	       1) more then two weeks have passed since the last
+	       rotation */
+	    state->doRotate = ((mktime(&now) - mktime(&state->lastRotated)) > (2 * 7 * 24 * 3600));
+	    if (!state->doRotate) {
+	    message(MESS_DEBUG, "  log does not need rotating "
+		    "(log has been rotated at %d-%d-%d %d:%d, "
+		    "that is not a fortnight ago yet)\n", state->lastRotated.tm_year,
+		    state->lastRotated.tm_mon, state->lastRotated.tm_mday,
+		    state->lastRotated.tm_hour, state->lastRotated.tm_min);
+	    }
+	    break;
 	case ROT_WEEKLY:
 	    /* rotate if:
 	       1) the current weekday is before the weekday of the
@@ -1852,6 +1865,9 @@ int rotateLogSet(struct logInfo *log, int force)
         break;
         case ROT_DAYS:
         message(MESS_DEBUG, "after %llu days ", log->threshhold);
+        break;
+        case ROT_FORTNIGHTLY:
+        message(MESS_DEBUG, "fortnightly ");
         break;
         case ROT_WEEKLY:
         message(MESS_DEBUG, "weekly ");
